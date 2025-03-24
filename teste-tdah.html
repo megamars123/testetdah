@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Completo de TDAH</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+        .user-data {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+        .question-group {
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+        .resultado {
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 5px;
+            display: none;
+            background: white;
+            border: 2px solid #4CAF50;
+        }
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 12px 25px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .warning {
+            color: #666;
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de Indícios de TDAH</h1>
+    
+    <form id="testeForm" action="https://formspree.io/f/mdkezjva" method="POST">
+        <input type="hidden" name="_subject" value="Novo Teste TDAH - Resultado">
+        <input type="hidden" name="_language" value="pt">
+        <input type="hidden" name="pontuacao" id="scoreHidden">
+        
+        <div class="user-data">
+            <h3>Seus Dados</h3>
+            <label>Nome completo:</label>
+            <input type="text" name="nome" required>
+            
+            <label>E-mail:</label>
+            <input type="email" name="_replyto" required>
+            <p class="warning">Seus dados estão seguros e serão usados apenas para enviar seu resultado.</p>
+        </div>
+
+        <div class="user-data">
+            <h3>Questionário</h3>
+            <p>Responda com que frequência essas situações ocorrem:</p>
+            <div id="questionsContainer"></div>
+        </div>
+
+        <button type="submit">Enviar Respostas</button>
+    </form>
+
+    <div id="resultado" class="resultado"></div>
+
+    <script>
+        const perguntas = [
+            "1. Dificuldade em manter a atenção em tarefas longas?",
+            "2. Evita tarefas que exigem esforço mental prolongado?",
+            "3. Distrai-se facilmente com estímulos externos?",
+            "4. Esquece compromissos ou obrigações importantes?",
+            "5. Dificuldade em seguir instruções complexas?",
+            "6. Perde objetos importantes com frequência?",
+            "7. Sentimento de inquietação ou agitação?",
+            "8. Tendência a interromper os outros durante conversas?",
+            "9. Dificuldade em esperar sua vez em filas ou conversas?",
+            "10. Fala em excesso ou dificuldade em manter o foco na conversa?",
+            "11. Problemas de organização no dia a dia?",
+            "12. Inicia projetos e não conclui?",
+            "13. Dificuldade em priorizar tarefas?",
+            "14. Sente-se sobrecarregado com múltiplas tarefas?",
+            "15. Comete erros por descuido com frequência?",
+            "16. Dificuldade em relaxar ou 'desligar'?",
+            "17. Age por impulso sem considerar consequências?",
+            "18. Problemas de gestão do tempo?",
+            "19. Sentimento frequente de impaciência?",
+            "20. Muda rapidamente de uma atividade para outra?",
+            "21. Dificuldade em manter rotinas estabelecidas?",
+            "22. Envolve-se em atividades de risco sem planejamento?",
+            "23. Experimenta oscilações bruscas de humor?",
+            "24. Sente que seu potencial não corresponde aos resultados?"
+        ];
+
+        function criarQuestionario() {
+            let html = '';
+            perguntas.forEach((pergunta, index) => {
+                html += `
+                <div class="question-group">
+                    <p>${pergunta}</p>
+                    <label><input type="radio" name="q${index}" value="0" required> Nunca</label>
+                    <label><input type="radio" name="q${index}" value="1"> Raramente</label>
+                    <label><input type="radio" name="q${index}" value="2"> Às vezes</label>
+                    <label><input type="radio" name="q${index}" value="3"> Frequentemente</label>
+                    <label><input type="radio" name="q${index}" value="4"> Muito Frequentemente</label>
+                </div>`;
+            });
+            document.getElementById('questionsContainer').innerHTML = html;
+        }
+
+        document.getElementById('testeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validar respostas
+            let todasRespondidas = true;
+            for(let i = 0; i < perguntas.length; i++) {
+                if(!document.querySelector(`input[name="q${i}"]:checked`)) {
+                    todasRespondidas = false;
+                    break;
+                }
+            }
+            
+            if(!todasRespondidas) {
+                alert('Por favor responda todas as perguntas!');
+                return;
+            }
+
+            // Calcular pontuação
+            let score = 0;
+            for(let i = 0; i < perguntas.length; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                score += parseInt(selected.value);
+            }
+            document.getElementById('scoreHidden').value = score;
+
+            // Enviar para Formspree
+            fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this),
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).then(response => {
+                if(response.ok) {
+                    mostrarResultado(score);
+                } else {
+                    alert('Erro ao enviar, tente novamente');
+                }
+            }).catch(error => {
+                alert('Erro de conexão');
+            });
+        });
+
+        function mostrarResultado(score) {
+            const resultadoDiv = document.getElementById('resultado');
+            const percentual = (score / (perguntas.length * 4)) * 100;
+            
+            let categoria, recomendacao;
+            if(percentual <= 25) {
+                categoria = 'Baixo Indício';
+                recomendacao = 'Resultados dentro da média. Mantenha bons hábitos de organização e atenção.';
+            } else if(percentual <= 40) {
+                categoria = 'Indícios Moderados';
+                recomendacao = 'Alguns sinais presentes. Recomenda-se auto-observação e acompanhamento.';
+            } else if(percentual <= 60) {
+                categoria = 'Indícios Relevantes';
+                recomendacao = 'Sugerimos avaliação com profissional especializado para análise detalhada.';
+            } else if(percentual <= 80) {
+                categoria = 'Alto Indício';
+                recomendacao = 'Recomendamos procurar avaliação médica especializada com urgência.';
+            } else {
+                categoria = 'Indícios Muito Altos';
+                recomendacao = 'Procure imediatamente um profissional de saúde mental para avaliação.';
+            }
+
+            resultadoDiv.innerHTML = `
+                <h2>Resultado: ${categoria}</h2>
+                <p>Pontuação Total: ${score}/96</p>
+                <p>${recomendacao}</p>
+                <p class="warning">Um relatório completo foi enviado para o e-mail cadastrado.</p>
+            `;
+            resultadoDiv.style.display = 'block';
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        window.onload = criarQuestionario;
+    </script>
+</body>
+</html>
